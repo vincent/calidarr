@@ -9,3 +9,4 @@ musicbrainzngs
 thefuzz
 Unidecode
 pylast
+bs4
