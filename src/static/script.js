@@ -68,7 +68,7 @@ function append_artists(artists) {
         var artist_col = clone.querySelector('#artist-column');
 
         artist_col.querySelector('.card-title').textContent = artist.Name;
-        artist_col.querySelector('.subtitle').textContent = `{artist.Location} ({artist.Venue})`;
+        artist_col.querySelector('.subtitle').textContent = `${artist.Location} (${artist.Venue})`;
         if (artist.Img_Link) {
             artist_col.querySelector('.card-img-top').src = artist.Img_Link;
             artist_col.querySelector('.card-img-top').alt = artist.Name;
@@ -79,9 +79,9 @@ function append_artists(artists) {
             window.open(artist.Evt_Link, '_blank');
         });
         artist_col.querySelector('.add-to-gagenda').addEventListener('click', function () {
-            var agenda_link = `https://calendar.google.com/calendar/r/eventedit?${URLSearchParams({
+            var agenda_link = `https://calendar.google.com/calendar/r/eventedit?${new URLSearchParams({
                 text: `${artist.Name} at ${artist.Venue}`,
-                details: 'Description',
+                details: `${artist.Name} at ${artist.Venue}`,
                 location: `${artist.Venue}, ${artist.Location}`,
                 dates: artist.Evt_Date,
             }).toString()}`;

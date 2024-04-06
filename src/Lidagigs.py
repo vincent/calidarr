@@ -220,6 +220,9 @@ class DataHandler:
                         evt_link = gig.select_one('a')
                         evt_link = f"https://www.songkick.com{evt_link['href']}" if evt_link else None
 
+                        evt_date = gig.select_one('a time')
+                        evt_date = evt_date['datetime'] if evt_date else None
+
                         venue = gig.select_one('.concert p')
                         venue = venue.get_text().strip() if venue else None
 
@@ -230,6 +233,7 @@ class DataHandler:
                             "Name": artist_name,
                             "Img_Link": img_link,
                             "Evt_Link": evt_link,
+                            "Evt_Date": evt_date,
                             "Venue": venue,
                             "Location": location,
                         }
