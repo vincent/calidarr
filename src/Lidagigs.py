@@ -223,10 +223,10 @@ class DataHandler:
                         evt_date = gig.select_one('a time')
                         evt_date = evt_date['datetime'] if evt_date else None
 
-                        venue = gig.select_one('.concert p')
+                        venue = gig.select_one('.concert .secondary-detail')
                         venue = venue.get_text().strip() if venue else None
 
-                        location = gig.select_one('.concert strong')
+                        location = gig.select_one('.concert .primary-detail')
                         location = location.get_text().strip() if location else None
 
                         gig_data = {

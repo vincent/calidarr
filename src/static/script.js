@@ -35,6 +35,13 @@ function check_if_all_selected() {
     lidarr_select_all_checkbox.checked = all_checked;
 }
 
+function previous_data() {
+    try {
+        return JSON.parse(localStorage.getItem('results')) || []
+    } catch (e) {}
+    return []
+}
+
 function load_lidarr_data(response) {
     var every_check_box = document.querySelectorAll('input[name="lidarr-item"]');
     if (response.Running) {
@@ -302,6 +309,7 @@ socket.on("refresh_artist", (artist) => {
 
 socket.on('more_gigs_loaded', function (data) {
     append_artists(data);
+    localStorage.setItem('results', JSON.stringify(previous_data().concat(data)))
 });
 
 socket.on('clear', function () {
@@ -310,6 +318,7 @@ socket.on('clear', function () {
     artist_cards.forEach(function (card) {
         card.remove();
     });
+    localStorage.clear('results')
 });
 
 socket.on("new_toast_msg", function (data) {
@@ -318,6 +327,10 @@ socket.on("new_toast_msg", function (data) {
 
 socket.on("disconnect", function () {
     show_toast("Connection Lost", "Please reconnect to continue.");
+});
+
+socket.on("connect", function () {
+    append_artists(previous_data())
 });
 
 var preview_modal;
