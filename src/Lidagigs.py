@@ -154,25 +154,20 @@ class DataHandler:
         try:
             self.lidagigs_logger.info(f"Getting Artists from Lidarr")
             self.lidarr_items = []
-            # endpoint = f"{self.lidarr_address}/api/v1/artist"
-            # headers = {"X-Api-Key": self.lidarr_api_key}
-            # response = requests.get(endpoint, headers=headers, timeout=self.lidarr_api_timeout)
+            endpoint = f"{self.lidarr_address}/api/v1/artist"
+            headers = {"X-Api-Key": self.lidarr_api_key}
+            response = requests.get(endpoint, headers=headers, timeout=self.lidarr_api_timeout)
 
-            # if response.status_code == 200:
-            #     self.full_lidarr_artist_list = response.json()
-            #     self.lidarr_items = [{"name": unidecode(artist["artistName"], replace_str=" "), "checked": False} for artist in self.full_lidarr_artist_list]
-            #     self.lidarr_items.sort(key=lambda x: x["name"].lower())
-            #     self.cleaned_lidarr_items = [item["name"].lower() for item in self.lidarr_items]
-            #     status = "Success"
-            #     data = self.lidarr_items
-            # else:
-            #     status = "Error"
-            #     data = response.text
-
-            self.lidarr_items = [{"name": "Garbage", "checked": False},{"name": "Pixies", "checked": False}]
-            self.cleaned_lidarr_items = [item["name"].lower() for item in self.lidarr_items]
-            status = "Success"
-            data = self.lidarr_items
+            if response.status_code == 200:
+                self.full_lidarr_artist_list = response.json()
+                self.lidarr_items = [{"name": unidecode(artist["artistName"], replace_str=" "), "checked": False} for artist in self.full_lidarr_artist_list]
+                self.lidarr_items.sort(key=lambda x: x["name"].lower())
+                self.cleaned_lidarr_items = [item["name"].lower() for item in self.lidarr_items]
+                status = "Success"
+                data = self.lidarr_items
+            else:
+                status = "Error"
+                data = response.text
 
             ret = {"Status": status, "Code": response.status_code if status == "Error" else None, "Data": data, "Running": not self.stop_event.is_set()}
 
@@ -196,16 +191,51 @@ class DataHandler:
                 for artist_name in random_artists:
                     if self.stop_event.is_set():
                         break
+
+                    self.lidagigs_logger.info(f"Searching for new gigs of {artist_name}")
                     response = requests.get(f'https://www.songkick.com/search?query={artist_name}&type=')
-                    time.sleep(3)
+                    time.sleep(2)
+
                     soup = BeautifulSoup(response.text, 'html.parser')
-                    gigs = soup.select('.events-summary li.venue')
+                    artist_url = soup.select_one('.artist .thumb.search-link')
+
+                    if artist_url is None:
+                        self.lidagigs_logger.info(f"  nothing for {artist_name}")
+                        break
+
+                    artist_url = f"https://www.songkick.com{artist_url['href']}/calendar"
+                    self.lidagigs_logger.info(f"  fetching {artist_url}")
+                    response = requests.get(artist_url)
+                    time.sleep(2)
+
+                    soup = BeautifulSoup(response.text, 'html.parser')
+                    artist_img = soup.select_one('img.artist-profile-image.artist')
+                    img_link = artist_img['src'] if artist_img else None
+                    gigs = soup.select('ol.event-listings.tour-calendar-summary li.event-listing')
+                    self.lidagigs_logger.info(f"  {len(gigs)} gigs found for {artist_name}")
                     for gig in gigs:
                         if self.stop_event.is_set():
                             break
-                        self.raw_new_gigs.append(gig)
-                        socketio.emit("more_gigs_loaded", [gig])
-                        self.new_found_gigs_counter += 1
+
+                        evt_link = gig.select_one('a')
+                        evt_link = f"https://www.songkick.com{evt_link['href']}" if evt_link else None
+
+                        venue = gig.select_one('.concert p')
+                        venue = venue.get_text().strip() if venue else None
+
+                        location = gig.select_one('.concert strong')
+                        location = location.get_text().strip() if location else None
+
+                        gig_data = {
+                            "Name": artist_name,
+                            "Img_Link": img_link,
+                            "Evt_Link": evt_link,
+                            "Venue": venue,
+                            "Location": location,
+                        }
+                        self.raw_new_gigs.append(gig_data)
+                        socketio.emit("more_gigs_loaded", [gig_data])
+                        # self.new_found_gigs_counter += 1
 
                 if self.new_found_gigs_counter == 0:
                     self.lidagigs_logger.info("Search Exhausted - Try selecting more artists from existing Lidarr library")

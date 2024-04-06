@@ -68,38 +68,25 @@ function append_artists(artists) {
         var artist_col = clone.querySelector('#artist-column');
 
         artist_col.querySelector('.card-title').textContent = artist.Name;
-        artist_col.querySelector('.genre').textContent = artist.Genre;
+        artist_col.querySelector('.subtitle').textContent = `{artist.Location} ({artist.Venue})`;
         if (artist.Img_Link) {
             artist_col.querySelector('.card-img-top').src = artist.Img_Link;
             artist_col.querySelector('.card-img-top').alt = artist.Name;
         } else {
             artist_col.querySelector('.artist-img-container').removeChild(artist_col.querySelector('.card-img-top'));
         }
-        artist_col.querySelector('.add-to-lidarr-btn').addEventListener('click', function () {
-            add_to_lidarr(artist.Name);
+        artist_col.querySelector('.to-venue-btn').addEventListener('click', function () {
+            window.open(artist.Evt_Link, '_blank');
         });
-        artist_col.querySelector('.get-preview-btn').addEventListener('click', function () {
-            preview_req(artist.Name);
+        artist_col.querySelector('.add-to-gagenda').addEventListener('click', function () {
+            var agenda_link = `https://calendar.google.com/calendar/r/eventedit?${URLSearchParams({
+                text: `${artist.Name} at ${artist.Venue}`,
+                details: 'Description',
+                location: `${artist.Venue}, ${artist.Location}`,
+                dates: artist.Evt_Date,
+            }).toString()}`;
+            window.open(agenda_link, '_blank');
         });
-        artist_col.querySelector('.followers').textContent = artist.Followers;
-        artist_col.querySelector('.popularity').textContent = artist.Popularity;
-
-        var add_button = artist_col.querySelector('.add-to-lidarr-btn');
-        if (artist.Status === "Added" || artist.Status === "Already in Lidarr") {
-            artist_col.querySelector('.card-body').classList.add('status-green');
-            add_button.classList.remove('btn-primary');
-            add_button.classList.add('btn-secondary');
-            add_button.disabled = true;
-            add_button.textContent = artist.Status;
-        } else if (artist.Status === "Failed to Add" || artist.Status === "Invalid Path") {
-            artist_col.querySelector('.card-body').classList.add('status-red');
-            add_button.classList.remove('btn-primary');
-            add_button.classList.add('btn-danger');
-            add_button.disabled = true;
-            add_button.textContent = artist.Status;
-        } else {
-            artist_col.querySelector('.card-body').classList.add('status-blue');
-        }
         artist_row.appendChild(clone);
     });
 }
