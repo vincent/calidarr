@@ -12,6 +12,9 @@ var lidarr_select_all_container = document.getElementById("lidarr-select-all-con
 var config_modal = document.getElementById('config-modal');
 var lidarr_sidebar = document.getElementById('lidarr-sidebar');
 
+var countries_list = document.querySelector(".countries-list");
+var countries_checkboxes = document.querySelectorAll(".countries-list input");
+var countries_selection = document.getElementById("countries-selection");
 var save_message = document.getElementById("save-message");
 var save_changes_button = document.getElementById("save-changes-button");
 const lidarr_address = document.getElementById("lidarr-address");
@@ -20,6 +23,7 @@ const root_folder_path = document.getElementById("root-folder-path");
 const spotify_client_id = document.getElementById("spotify-client-id");
 const spotify_client_secret = document.getElementById("spotify-client-secret");
 
+var countries_filter = [];
 var lidarr_items = [];
 var socket = io();
 
@@ -35,9 +39,16 @@ function check_if_all_selected() {
     lidarr_select_all_checkbox.checked = all_checked;
 }
 
-function previous_data() {
+function previous_results() {
     try {
         return JSON.parse(localStorage.getItem('results')) || []
+    } catch (e) {}
+    return []
+}
+
+function previous_countries() {
+    try {
+        return JSON.parse(localStorage.getItem('countries')) || []
     } catch (e) {}
     return []
 }
@@ -73,9 +84,15 @@ function append_artists(artists) {
     artists.forEach(function (artist) {
         var clone = document.importNode(template.content, true);
         var artist_col = clone.querySelector('#artist-column');
+        
+        if (artist.Location && countries_filter.length && !countries_filter.some(c => artist.Location.match(new RegExp(`, ${c}$`)))) {
+            console.debug(`skipping gig in ${artist.Location}`);
+            return;
+        }
 
         artist_col.querySelector('.card-title').textContent = artist.Name;
         artist_col.querySelector('.subtitle').textContent = `${artist.Location} (${artist.Venue})`;
+        artist_col.querySelector('.date').textContent = artist.Evt_Date ? (new Date(artist.Evt_Date)).toLocaleDateString() : '';
         if (artist.Img_Link) {
             artist_col.querySelector('.card-img-top').src = artist.Img_Link;
             artist_col.querySelector('.card-img-top').alt = artist.Name;
@@ -90,7 +107,7 @@ function append_artists(artists) {
                 text: `${artist.Name} at ${artist.Venue}`,
                 details: `${artist.Name} at ${artist.Venue}`,
                 location: `${artist.Venue}, ${artist.Location}`,
-                dates: artist.Evt_Date,
+                dates: (new Date(artist.Evt_Date)).toISOString().replace(/-|:|\.\d\d\d/g, ''),
             }).toString()}`;
             window.open(agenda_link, '_blank');
         });
@@ -125,6 +142,32 @@ function show_toast(header, message) {
         toast_template.remove();
     });
 }
+
+function update_countries_handler(event) {
+    var cb = event.target
+    countries_filter = countries_filter
+        .filter(c => c !== cb.value)
+        .concat(cb.checked ? cb.value : []);
+
+    countries_selection.textContent = countries_filter.length ? `${countries_filter.length} selected` : 'all'
+    localStorage.setItem('countries', JSON.stringify(countries_filter))
+}
+
+countries_checkboxes.forEach(function(cb) {
+    cb.addEventListener("change", update_countries_handler)
+})
+
+countries_selection.addEventListener("click", function() {
+    countries_list.classList.toggle('d-none')
+})
+
+try {
+    countries_filter = previous_countries();
+    countries_selection.textContent = countries_filter.length ? `${countries_filter.length} selected` : 'all'
+    countries_checkboxes.forEach(function(cb) {
+        cb.checked = countries_filter.includes(cb.value)
+    })
+} catch (e) {}
 
 return_to_top.addEventListener("click", function () {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -309,7 +352,7 @@ socket.on("refresh_artist", (artist) => {
 
 socket.on('more_gigs_loaded', function (data) {
     append_artists(data);
-    localStorage.setItem('results', JSON.stringify(previous_data().concat(data)))
+    localStorage.setItem('results', JSON.stringify(previous_results().concat(data)))
 });
 
 socket.on('clear', function () {
@@ -330,7 +373,7 @@ socket.on("disconnect", function () {
 });
 
 socket.on("connect", function () {
-    append_artists(previous_data())
+    append_artists(previous_results())
 });
 
 var preview_modal;

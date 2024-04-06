@@ -107,6 +107,34 @@
       <div class="control-box m-1 w-100">
         <div class="row w-100">
           <div class="col p-1">
+            <h6>Filter countries: <span class="cursor-pointer" id="countries-selection">all</span></h6>
+            <div class="countries-list d-none">
+              <label class="d-flex"><input type="checkbox" class="me-1" value="Argentina"/> Argentina</label>
+              <label class="d-flex"><input type="checkbox" class="me-1" value="Australia"/> Australia</label>
+              <label class="d-flex"><input type="checkbox" class="me-1" value="Brazil"/> Brazil</label>
+              <label class="d-flex"><input type="checkbox" class="me-1" value="Canada"/> Canada</label>
+              <label class="d-flex"><input type="checkbox" class="me-1" value="France"/> France</label>
+              <label class="d-flex"><input type="checkbox" class="me-1" value="Germany"/> Germany</label>
+              <label class="d-flex"><input type="checkbox" class="me-1" value="UK"/> Great Britain</label>
+              <label class="d-flex"><input type="checkbox" class="me-1" value="Indonesia"/> Indonesia</label>
+              <label class="d-flex"><input type="checkbox" class="me-1" value="Ireland"/> Ireland</label>
+              <label class="d-flex"><input type="checkbox" class="me-1" value="Italy"/> Italy</label>
+              <label class="d-flex"><input type="checkbox" class="me-1" value="Luxembourg"/> Luxembourg</label>
+              <label class="d-flex"><input type="checkbox" class="me-1" value="Mexico"/> Mexico</label>
+              <label class="d-flex"><input type="checkbox" class="me-1" value="Netherlands"/> Netherlands</label>
+              <label class="d-flex"><input type="checkbox" class="me-1" value="US"/> United States</label>
+              <label class="d-flex"><input type="checkbox" class="me-1" value="Sweden"/> Sweden</label>
+              <label class="d-flex"><input type="checkbox" class="me-1" value="Spain"/> Spain</label>
+              <label class="d-flex"><input type="checkbox" class="me-1" value="Switzerland"/> Switzerland</label>
+              <label class="d-flex"><input type="checkbox" class="me-1" value="Turkey"/> Turkey</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="control-box m-1 w-100">
+        <div class="row w-100">
+          <div class="col p-1">
             <button class="btn btn-primary w-100" id="lidarr-get-artists-button" type="button">
               <span class="spinner-border spinner-border-sm d-none" id="lidarr-spinner" role="status"
                 aria-hidden="true"></span>
@@ -157,6 +185,7 @@
               </div>
               <h5 class="card-title"></h5>
               <p class="card-text subtitle"></p>
+              <p class="card-text date"></p>
               <div class="artist-img-container">
                 <img src="" class="card-img-top" alt="">
                 <div class="artist-img-overlay"></div>

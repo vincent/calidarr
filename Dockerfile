@@ -12,5 +12,4 @@ RUN chown -R $UID:$GID /lidagigs
 RUN pip install --no-cache-dir -r requirements.txt
 EXPOSE 5000
 USER general_user
-# CMD ["gunicorn", "src.Lidagigs:app", "-c", "gunicorn_config.py"]
-CMD ["bash"]
+CMD ["gunicorn", "src.Lidagigs:app", "-c", "gunicorn_config.py"]

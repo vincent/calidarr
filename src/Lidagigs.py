@@ -186,60 +186,64 @@ class DataHandler:
                 self.lidagigs_logger.info(f"Searching for new gigs via {self.mode}")
                 self.new_found_gigs_counter = 0
                 self.search_in_progress_flag = True
-                random_artists = random.sample(self.artists_to_use_in_search, min(5, len(self.artists_to_use_in_search)))
+                # random_artists = random.sample(self.artists_to_use_in_search, min(5, len(self.artists_to_use_in_search)))
+                random_artists = self.artists_to_use_in_search
 
                 for artist_name in random_artists:
                     if self.stop_event.is_set():
                         break
 
-                    self.lidagigs_logger.info(f"Searching for new gigs of {artist_name}")
-                    response = requests.get(f'https://www.songkick.com/search?query={artist_name}&type=')
-                    time.sleep(2)
+                    try:
+                        self.lidagigs_logger.info(f"Searching for new gigs of {artist_name}")
+                        response = requests.get(f'https://www.songkick.com/search?query={artist_name}&type=')
+                        time.sleep(2)
 
-                    soup = BeautifulSoup(response.text, 'html.parser')
-                    artist_url = soup.select_one('.artist .thumb.search-link')
+                        soup = BeautifulSoup(response.text, 'html.parser')
+                        artist_url = soup.select_one('.artist .thumb.search-link')
 
-                    if artist_url is None:
-                        self.lidagigs_logger.info(f"  nothing for {artist_name}")
-                        break
+                        if artist_url is None:
+                            self.lidagigs_logger.info(f"  nothing for {artist_name}")
+                            continue
 
-                    artist_url = f"https://www.songkick.com{artist_url['href']}/calendar"
-                    self.lidagigs_logger.info(f"  fetching {artist_url}")
-                    response = requests.get(artist_url)
-                    time.sleep(2)
+                        artist_url = f"https://www.songkick.com{artist_url['href']}/calendar"
+                        self.lidagigs_logger.info(f"  fetching {artist_url}")
+                        response = requests.get(artist_url)
+                        time.sleep(2)
 
-                    soup = BeautifulSoup(response.text, 'html.parser')
-                    artist_img = soup.select_one('img.artist-profile-image.artist')
-                    img_link = artist_img['src'] if artist_img else None
-                    gigs = soup.select('ol.event-listings.tour-calendar-summary li.event-listing')
-                    self.lidagigs_logger.info(f"  {len(gigs)} gigs found for {artist_name}")
-                    for gig in gigs:
-                        if self.stop_event.is_set():
-                            break
+                        soup = BeautifulSoup(response.text, 'html.parser')
+                        artist_img = soup.select_one('.profile-picture-wrap img.artist-profile-image')
+                        img_link = artist_img['src'] if artist_img else None
 
-                        evt_link = gig.select_one('a')
-                        evt_link = f"https://www.songkick.com{evt_link['href']}" if evt_link else None
+                        gigs = soup.select('ol.event-listings.tour-calendar-summary li.event-listing')
+                        self.lidagigs_logger.info(f"  {len(gigs)} gigs found for {artist_name}")
 
-                        evt_date = gig.select_one('a time')
-                        evt_date = evt_date['datetime'] if evt_date else None
+                        for gig in gigs:
+                            evt_link = gig.select_one('a')
+                            evt_link = f"https://www.songkick.com{evt_link['href']}" if evt_link else None
 
-                        venue = gig.select_one('.concert .secondary-detail')
-                        venue = venue.get_text().strip() if venue else None
+                            evt_date = gig.select_one('a time')
+                            evt_date = evt_date['datetime'] if evt_date else None
 
-                        location = gig.select_one('.concert .primary-detail')
-                        location = location.get_text().strip() if location else None
+                            venue = gig.select_one('.concert .secondary-detail')
+                            venue = venue.get_text().strip() if venue else None
 
-                        gig_data = {
-                            "Name": artist_name,
-                            "Img_Link": img_link,
-                            "Evt_Link": evt_link,
-                            "Evt_Date": evt_date,
-                            "Venue": venue,
-                            "Location": location,
-                        }
-                        self.raw_new_gigs.append(gig_data)
-                        socketio.emit("more_gigs_loaded", [gig_data])
-                        # self.new_found_gigs_counter += 1
+                            location = gig.select_one('.concert .primary-detail')
+                            location = location.get_text().strip() if location else None
+
+                            gig_data = {
+                                "Name": artist_name,
+                                "Img_Link": img_link,
+                                "Evt_Link": evt_link,
+                                "Evt_Date": evt_date,
+                                "Venue": venue,
+                                "Location": location,
+                            }
+                            self.raw_new_gigs.append(gig_data)
+                            socketio.emit("more_gigs_loaded", [gig_data])
+                            self.new_found_gigs_counter += 1
+
+                    except Exception as e:
+                        self.lidagigs_logger.error(f"Songkick Error: {str(e)}")
 
                 if self.new_found_gigs_counter == 0:
                     self.lidagigs_logger.info("Search Exhausted - Try selecting more artists from existing Lidarr library")
