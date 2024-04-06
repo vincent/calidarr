@@ -2,8 +2,8 @@ FROM python:3.11.9-bullseye
 # Create User
 ARG UID=1000
 ARG GID=1000
-RUN addgroup -g $GID general_user && \
-    adduser -D -u $UID -G general_user -s /bin/sh general_user
+RUN addgroup --gid $GID general_user && \
+    adduser -D --uid $UID --group general_user -s /bin/sh general_user
 # Create directories and set permissions
 COPY . /lidagigs
 WORKDIR /lidagigs
