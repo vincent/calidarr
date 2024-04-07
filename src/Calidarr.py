@@ -40,7 +40,7 @@ class DataHandler:
             "lidarr_api_key": "",
             "fallback_to_top_result": False,
             "lidarr_api_timeout": 120.0,
-            "app_name": "Lidagigs",
+            "app_name": "Calidarr",
             "app_rev": "0.04",
             "app_url": "http://" + "".join(random.choices(string.ascii_lowercase, k=10)) + ".com",
             "mode": "Songkick",

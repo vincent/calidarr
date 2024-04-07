@@ -1,7 +1,7 @@
 import os
 import pytz
 import sys, getopt
-from src.Lidagigs import CalendarHandler
+from src.Calidarr import CalendarHandler
  
 def main(argv):
     countries = []
