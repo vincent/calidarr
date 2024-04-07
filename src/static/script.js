@@ -19,9 +19,6 @@ var save_message = document.getElementById("save-message");
 var save_changes_button = document.getElementById("save-changes-button");
 const lidarr_address = document.getElementById("lidarr-address");
 const lidarr_api_key = document.getElementById("lidarr-api-key");
-const root_folder_path = document.getElementById("root-folder-path");
-const spotify_client_id = document.getElementById("spotify-client-id");
-const spotify_client_secret = document.getElementById("spotify-client-secret");
 
 var countries_filter = [];
 var lidarr_items = [];
@@ -240,9 +237,6 @@ save_changes_button.addEventListener("click", () => {
     socket.emit("update_settings", {
         "lidarr_address": lidarr_address.value,
         "lidarr_api_key": lidarr_api_key.value,
-        "root_folder_path": root_folder_path.value,
-        "spotify_client_id": spotify_client_id.value,
-        "spotify_client_secret": spotify_client_secret.value,
     });
     save_message.style.display = "block";
     setTimeout(function () {
@@ -256,9 +250,6 @@ config_modal.addEventListener('show.bs.modal', function (event) {
     function handle_settings_loaded(settings) {
         lidarr_address.value = settings.lidarr_address;
         lidarr_api_key.value = settings.lidarr_api_key;
-        root_folder_path.value = settings.root_folder_path;
-        spotify_client_id.value = settings.spotify_client_id;
-        spotify_client_secret.value = settings.spotify_client_secret;
         socket.off("settingsLoaded", handle_settings_loaded);
     }
     socket.on("settingsLoaded", handle_settings_loaded);

@@ -4,9 +4,6 @@ gevent-websocket
 flask
 flask_socketio
 requests
-spotipy
-musicbrainzngs
-thefuzz
 Unidecode
-pylast
 bs4
+icalendar
