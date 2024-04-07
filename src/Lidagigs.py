@@ -224,10 +224,13 @@ class DataHandler:
                             evt_date = gig.select_one('a time')
                             evt_date = evt_date['datetime'] if evt_date else None
 
-                            venue = gig.select_one('.concert .secondary-detail')
+                            state_tag = gig.select_one('.event-details .item-state-tag')
+                            state_tag = state_tag.get_text().strip() if state_tag else None
+
+                            venue = gig.select_one('.event-details .secondary-detail')
                             venue = venue.get_text().strip() if venue else None
 
-                            location = gig.select_one('.concert .primary-detail')
+                            location = gig.select_one('.event-details .primary-detail')
                             location = location.get_text().strip() if location else None
 
                             gig_data = {
@@ -237,6 +240,7 @@ class DataHandler:
                                 "Evt_Date": evt_date,
                                 "Venue": venue,
                                 "Location": location,
+                                "Status": state_tag,
                             }
                             self.raw_new_gigs.append(gig_data)
                             socketio.emit("more_gigs_loaded", [gig_data])
@@ -325,7 +329,7 @@ class DataHandler:
             for item in self.gigs:
                 if item["Name"] == artist_name:
                     item["Status"] = status
-                    socketio.emit("refresh_artist", item)
+                    socketio.emit("refresh_gig", item)
                     break
 
         except Exception as e:
@@ -550,8 +554,8 @@ def stopper():
     data_handler.stop_event.set()
 
 
-@socketio.on("load_more_artists")
-def load_more_artists():
+@socketio.on("load_more_gigs")
+def load_more_gigs():
     thread = threading.Thread(target=data_handler.find_gigs, name="FindSimilar")
     thread.daemon = True
     thread.start()

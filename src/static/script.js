@@ -77,47 +77,60 @@ function load_lidarr_data(response) {
     check_if_all_selected();
 }
 
-function append_artists(artists) {
-    var artist_row = document.getElementById('artist-row');
-    var template = document.getElementById('artist-template');
+function append_gigs(gigs) {
+    var gig_row = document.getElementById('gig-row');
+    var template = document.getElementById('gig-template');
 
-    artists.forEach(function (artist) {
+    gigs.forEach(function (gig) {
         var clone = document.importNode(template.content, true);
-        var artist_col = clone.querySelector('#artist-column');
+        var gig_col = clone.querySelector('#gig-column');
         
-        if (artist.Location && countries_filter.length && !countries_filter.some(c => artist.Location.match(new RegExp(`, ${c}$`)))) {
-            console.debug(`skipping gig in ${artist.Location}`);
+        if (gig.Location && countries_filter.length && !gig.Location.match(new RegExp(`(${countries_filter.join('|')})$`))) {
+            console.debug(`skipping gig in ${gig.Location}`);
             return;
         }
 
-        artist_col.querySelector('.card-title').textContent = artist.Name;
-        artist_col.querySelector('.subtitle').textContent = `${artist.Location} (${artist.Venue})`;
-        artist_col.querySelector('.date').textContent = artist.Evt_Date ? (new Date(artist.Evt_Date)).toLocaleDateString() : '';
-        if (artist.Img_Link) {
-            artist_col.querySelector('.card-img-top').src = artist.Img_Link;
-            artist_col.querySelector('.card-img-top').alt = artist.Name;
+        if (!gig.Status) {
+            gig_col.querySelector('.status-indicator');
+            gig_col.querySelector('.card-body').classList.add('status-green');
+
+        } else if (gig.Status.match(/(Cancelled)/i)) {
+            gig_col.querySelector('.card-body').classList.add('status-red');
+            gig_col.querySelector('.status-indicator').setAttribute('title', gig.Status)
+
         } else {
-            artist_col.querySelector('.artist-img-container').removeChild(artist_col.querySelector('.card-img-top'));
+            gig_col.querySelector('.status-indicator').setAttribute('title', gig.Status)
         }
-        artist_col.querySelector('.to-venue-btn').addEventListener('click', function () {
-            window.open(artist.Evt_Link, '_blank');
+
+        gig_col.querySelector('.card-title').textContent = gig.Name;
+        gig_col.querySelector('.subtitle').textContent = `${gig.Location} (${gig.Venue})`;
+        gig_col.querySelector('.date').textContent = gig.Evt_Date ? (new Date(gig.Evt_Date)).toLocaleDateString() : '';
+        if (gig.Img_Link) {
+            gig_col.querySelector('.card-img-top').src = gig.Img_Link;
+            gig_col.querySelector('.card-img-top').alt = gig.Name;
+        } else {
+            gig_col.querySelector('.gig-img-container').removeChild(gig_col.querySelector('.card-img-top'));
+        }
+        gig_col.querySelector('.to-venue-btn').addEventListener('click', function () {
+            window.open(gig.Evt_Link, '_blank');
         });
-        artist_col.querySelector('.add-to-gagenda').addEventListener('click', function () {
+        gig_col.querySelector('.add-to-gagenda').addEventListener('click', function () {
+            var date = (new Date(gig.Evt_Date)).toISOString().replace(/-|:|\.\d\d\d/g, '');
             var agenda_link = `https://calendar.google.com/calendar/r/eventedit?${new URLSearchParams({
-                text: `${artist.Name} at ${artist.Venue}`,
-                details: `${artist.Name} at ${artist.Venue}`,
-                location: `${artist.Venue}, ${artist.Location}`,
-                dates: (new Date(artist.Evt_Date)).toISOString().replace(/-|:|\.\d\d\d/g, ''),
+                text: `${gig.Name} at ${gig.Venue}`,
+                details: `${gig.Name} at ${gig.Venue}`,
+                location: `${gig.Venue}, ${gig.Location}`,
+                dates: `${date}/${date}`,
             }).toString()}`;
             window.open(agenda_link, '_blank');
         });
-        artist_row.appendChild(clone);
+        gig_row.appendChild(clone);
     });
 }
 
-function add_to_lidarr(artist_name) {
+function add_to_lidarr(gig_name) {
     if (socket.connected) {
-        socket.emit('adder', encodeURIComponent(artist_name));
+        socket.emit('adder', encodeURIComponent(gig_name));
     }
     else {
         show_toast("Connection Lost", "Please reload to continue.");
@@ -181,13 +194,16 @@ lidarr_select_all_checkbox.addEventListener("change", function () {
     });
 });
 
-lidarr_get_artists_button.addEventListener('click', function () {
+function load_artists() {
     lidarr_get_artists_button.disabled = true;
     lidarr_spinner.classList.remove('d-none');
     lidarr_status.textContent = "Accessing Lidarr API";
     lidarr_item_list.innerHTML = '';
     socket.emit("get_lidarr_artists");
-});
+}
+
+lidarr_get_artists_button.addEventListener('click', load_artists);
+load_artists();
 
 start_stop_button.addEventListener('click', function () {
     var running_state = start_stop_button.textContent.trim() === "Start" ? true : false;
@@ -204,7 +220,7 @@ start_stop_button.addEventListener('click', function () {
         lidarr_select_all_checkbox.disabled = true;
         socket.emit("start_req", checked_items);
         if (checked_items.length > 0) {
-            show_toast("Loading new artists");
+            show_toast("Loading new gigs");
         }
     }
     else {
@@ -254,20 +270,20 @@ lidarr_sidebar.addEventListener('show.bs.offcanvas', function (event) {
 
 window.addEventListener('scroll', function () {
     if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
-        socket.emit('load_more_artists');
+        socket.emit('load_more_gigs');
     }
 });
 
 window.addEventListener('touchmove', function () {
     if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
-        socket.emit('load_more_artists');
+        socket.emit('load_more_gigs');
     }
 });
 
 window.addEventListener('touchend', () => {
     const { scrollHeight, scrollTop, clientHeight } = document.documentElement;
     if (Math.abs(scrollHeight - clientHeight - scrollTop) < 1) {
-        socket.emit('load_more_artists');
+        socket.emit('load_more_gigs');
     }
 });
 
@@ -318,29 +334,29 @@ socket.on("lidarr_sidebar_update", (response) => {
     load_lidarr_data(response);
 });
 
-socket.on("refresh_artist", (artist) => {
-    var artist_cards = document.querySelectorAll('#artist-column');
-    artist_cards.forEach(function (card) {
+socket.on("refresh_gig", (gig) => {
+    var gig_cards = document.querySelectorAll('#gig-column');
+    gig_cards.forEach(function (card) {
         var card_body = card.querySelector('.card-body');
-        var card_artist_name = card_body.querySelector('.card-title').textContent.trim();
+        var card_gig_name = card_body.querySelector('.card-title').textContent.trim();
 
-        if (card_artist_name === artist.Name) {
+        if (card_gig_name === gig.Name) {
             card_body.classList.remove('status-green', 'status-red', 'status-blue');
 
             var add_button = card_body.querySelector('.add-to-lidarr-btn');
 
-            if (artist.Status === "Added" || artist.Status === "Already in Lidarr") {
+            if (gig.Status === "Added" || gig.Status === "Already in Lidarr") {
                 card_body.classList.add('status-green');
                 add_button.classList.remove('btn-primary');
                 add_button.classList.add('btn-secondary');
                 add_button.disabled = true;
-                add_button.textContent = artist.Status;
-            } else if (artist.Status === "Failed to Add" || artist.Status === "Invalid Path") {
+                add_button.textContent = gig.Status;
+            } else if (gig.Status === "Failed to Add" || gig.Status === "Invalid Path") {
                 card_body.classList.add('status-red');
                 add_button.classList.remove('btn-primary');
                 add_button.classList.add('btn-danger');
                 add_button.disabled = true;
-                add_button.textContent = artist.Status;
+                add_button.textContent = gig.Status;
             } else {
                 card_body.classList.add('status-blue');
                 add_button.disabled = false;
@@ -351,17 +367,21 @@ socket.on("refresh_artist", (artist) => {
 });
 
 socket.on('more_gigs_loaded', function (data) {
-    append_artists(data);
+    append_gigs(data);
     localStorage.setItem('results', JSON.stringify(previous_results().concat(data)))
 });
 
-socket.on('clear', function () {
-    var artist_row = document.getElementById('artist-row');
-    var artist_cards = artist_row.querySelectorAll('#artist-column');
-    artist_cards.forEach(function (card) {
+function clear_results() {
+    var gig_row = document.getElementById('gig-row');
+    var gig_cards = gig_row.querySelectorAll('#gig-column');
+    gig_cards.forEach(function (card) {
         card.remove();
     });
-    localStorage.clear('results')
+}
+
+socket.on('clear', function () {
+    clear_results()
+    localStorage.setItem('results', null)
 });
 
 socket.on("new_toast_msg", function (data) {
@@ -373,23 +393,24 @@ socket.on("disconnect", function () {
 });
 
 socket.on("connect", function () {
-    append_artists(previous_results())
+    clear_results()
+    append_gigs(previous_results())
 });
 
 var preview_modal;
 let preview_request_flag = false;
 
-function preview_req(artist_name) {
+function preview_req(gig_name) {
     if (!preview_request_flag) {
         preview_request_flag = true;
-        socket.emit("preview_req", encodeURIComponent(artist_name));
+        socket.emit("preview_req", encodeURIComponent(gig_name));
         setTimeout(() => {
             preview_request_flag = false;
         }, 1500);
     }
 }
 
-function show_audio_player_modal(artist, song) {
+function show_audio_player_modal(gig, song) {
     preview_modal = new bootstrap.Modal(document.getElementById('audio-player-modal'));
     preview_modal.show();
     preview_modal._element.addEventListener('hidden.bs.modal', function () {
@@ -398,7 +419,7 @@ function show_audio_player_modal(artist, song) {
 
     var modal_title_label = document.getElementById('audio-player-modal-label');
     if (modal_title_label) {
-        modal_title_label.textContent = `${artist} - ${song}`;
+        modal_title_label.textContent = `${gig} - ${song}`;
     }
 }
 
@@ -420,9 +441,9 @@ socket.on("spotify_preview", function (preview_info) {
     if (typeof preview_info === 'string') {
         show_toast("Error Retrieving Preview", preview_info);
     } else {
-        var artist = preview_info.artist;
+        var gig = preview_info.gig;
         var song = preview_info.song;
-        show_audio_player_modal(artist, song);
+        show_audio_player_modal(gig, song);
         play_audio(preview_info.preview_url);
     }
 });
@@ -432,11 +453,11 @@ socket.on("lastfm_preview", function (preview_info) {
         show_toast("Error Retrieving Bio", preview_info);
     }
     else {
-        var artist_name = preview_info.artist_name;
+        var gig_name = preview_info.gig_name;
         var biography = preview_info.biography;
         var modal_title = document.getElementById('bio-modal-title');
         var modal_body = document.getElementById('modal-body');
-        modal_title.textContent = artist_name;
+        modal_title.textContent = gig_name;
         modal_body.textContent = biography;
         var modal = new bootstrap.Modal(document.getElementById('bio-modal-modal'));
         modal.show();

@@ -109,6 +109,7 @@
           <div class="col p-1">
             <h6>Filter countries: <span class="cursor-pointer" id="countries-selection">all</span></h6>
             <div class="countries-list d-none">
+              <label class="d-flex"><input type="checkbox" class="me-1" value="Live Stream"/> 📻 Live Streams</label>
               <label class="d-flex"><input type="checkbox" class="me-1" value="Argentina"/> Argentina</label>
               <label class="d-flex"><input type="checkbox" class="me-1" value="Australia"/> Australia</label>
               <label class="d-flex"><input type="checkbox" class="me-1" value="Brazil"/> Brazil</label>
@@ -174,10 +175,10 @@
   </div>
 
   <!-- Artits Cards -->
-  <div class="container-fluid p-1" id="artist-container">
-    <div class="row" id="artist-row">
-      <template id="artist-template">
-        <div class="col-12 col-md-4 col-xxl-2 mb-3" id="artist-column">
+  <div class="container-fluid p-1" id="gig-container">
+    <div class="row" id="gig-row">
+      <template id="gig-template">
+        <div class="col-12 col-md-4 col-xxl-2 mb-3" id="gig-column">
           <div class="card">
             <div class="card-body">
               <div class="status-indicator">
@@ -186,9 +187,9 @@
               <h5 class="card-title"></h5>
               <p class="card-text subtitle"></p>
               <p class="card-text date"></p>
-              <div class="artist-img-container">
+              <div class="gig-img-container">
                 <img src="" class="card-img-top" alt="">
-                <div class="artist-img-overlay"></div>
+                <div class="gig-img-overlay"></div>
                 <div class="button-container">
                   <button class="btn btn-primary to-venue-btn mb-1">Venue</button>
                   <button class="btn btn-primary add-to-gagenda">Add to agenda</button>
