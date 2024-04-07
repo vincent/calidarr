@@ -9,11 +9,11 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv, "hc:n:", ["countries=","names="])
     except getopt.GetoptError:
-        print ('test.py -c <countries> -n <names>')
+        print ('agenda.py -c <countries> -n <names>')
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print ('test.py -c <countries> -a <names>')
+            print ('agenda.py -c <countries> -a <names>')
             sys.exit()
         elif opt in ("-c", "--countries"):
             countries = arg.split(",")
