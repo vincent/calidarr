@@ -1,4 +1,4 @@
-FROM python:3.11.9-bullseye
+FROM python:3.12.4-bullseye
 # Create User
 ARG UID=1000
 ARG GID=1000
